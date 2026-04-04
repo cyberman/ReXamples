@@ -1,4 +1,4 @@
-# ReXamples
+# ReXamples - Examples for ReAction
 
 **Independent native ReAction teaching examples for AmigaOS 3.2+**  
 **Plain C89 lessons for disciplined system-native GUI development**
@@ -147,8 +147,12 @@ before submitting changes.
 
 ## License
 
-Source code in this repository is licensed under the **MIT License**.
+ReXamples uses a split-license model.
 
-Written teaching material, including lesson descriptions, curriculum text,
-manifesto text, rules, style guides, and other prose documentation, is licensed separately.
+- **Source code** is licensed under the **MIT License**
+- **Written teaching material and prose documentation** are licensed separately
+
+This keeps the code openly reusable while preserving the written teaching material
+as a distinct body of work.
+
 See **`LICENSE`** and **`LICENSE.docs`** for details.
