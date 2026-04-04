@@ -44,43 +44,46 @@ Introduces single-choice selection with a native ReAction selector gadget.
 ### 06_String
 Shows how text input is handled with explicit buffers and clear ownership.
 
-### 07_ListBrowser
+### 07_TextEditor
+Teaches native multiline text editing with explicit content handling, visible ownership, and disciplined event-driven structure.
+
+### 08_ListBrowser
 Introduces structured list display, entry management, and selection handling.
 
-### 08_RadioChoice
+### 09_RadioChoice
 Teaches exclusive choice between multiple options as a distinct UI pattern.
 
-### 09_Image
+### 10_Image
 Shows how visual objects are integrated and managed as real interface resources.
 
-### 10_Slider
+### 11_Slider
 Introduces continuous numeric input and value-change handling.
 
-### 11_Space
+### 12_Space
 Shows how layout spacing and visual breathing room are part of interface design.
 
-### 12_Frame
+### 13_Frame
 Teaches visual grouping and structural separation without decorative excess.
 
-### 13_Menu_Basic
+### 14_Menu_Basic
 Introduces native AmigaOS menus as a normal part of the event-driven UI model.
 
-### 14_Menu_Advanced
+### 15_Menu_Advanced
 Builds on the basic menu lesson with richer menu structure and controlled state.
 
-### 15_Gauge
+### 16_Gauge
 Shows how read-only progress or status display differs from user-controlled input gadgets.
 
-### 16_TextDisplay
+### 17_TextDisplay
 Introduces static or structured text presentation beyond simple labels.
 
-### 17_ScrollableLayout
+### 18_ScrollableLayout
 Teaches how larger-than-visible content is structured in a native scrollable interface.
 
-### 18_RegisterPages
+### 19_RegisterPages
 Shows how multi-page interfaces are organized with clear page-level structure.
 
-### 19_EventDispatch
+### 20_EventDispatch
 Brings the series together by teaching explicit event routing and controlled UI reactions.
 
 ## 3. Teaching progression
@@ -98,16 +101,17 @@ Purpose:
 Teach the basic structure of a native ReAction program:
 window lifetime, object hierarchy, simple gadgets, and event-driven interaction.
 
-### Stage 2: Input and selection
+### Stage 2: Input and editing
 Lessons:
 - Chooser
 - String
+- TextEditor
 - ListBrowser
 - RadioChoice
 - Slider
 
 Purpose:
-Teach how the interface accepts user input, how values are represented,
+Teach how the interface accepts user input, how values and editable content are represented,
 and how state changes are handled cleanly.
 
 ### Stage 3: Visual structure
@@ -203,4 +207,3 @@ It is a structured native learning path.
 Each lesson should make the next lesson easier to understand.
 Each lesson should strengthen correct habits.
 Each lesson should help define a visible baseline for disciplined ReAction development on AmigaOS 3.2+.
-

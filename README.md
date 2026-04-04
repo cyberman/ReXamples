@@ -74,19 +74,20 @@ Suggested learning order:
 4. `04_CheckBox`
 5. `05_Chooser`
 6. `06_String`
-7. `07_ListBrowser`
-8. `08_RadioChoice`
-9. `09_Image`
-10. `10_Slider`
-11. `11_Space`
-12. `12_Frame`
-13. `13_Menu_Basic`
-14. `14_Menu_Advanced`
-15. `15_Gauge`
-16. `16_TextDisplay`
-17. `17_ScrollableLayout`
-18. `18_RegisterPages`
-19. `19_EventDispatch`
+7. `07_TextEditor`
+8. `08_ListBrowser`
+9. `09_RadioChoice`
+10. `10_Image`
+11. `11_Slider`
+12. `12_Space`
+13. `13_Frame`
+14. `14_Menu_Basic`
+15. `15_Menu_Advanced`
+16. `16_Gauge`
+17. `17_TextDisplay`
+18. `18_ScrollableLayout`
+19. `19_RegisterPages`
+20. `20_EventDispatch`
 
 See `docs/curriculum.md` for the full learning path.
 
