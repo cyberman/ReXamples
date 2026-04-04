@@ -1,11 +1,12 @@
 # ReXamples
 
-**Native ReAction examples for AmigaOS 3.2+**  
-**Plain C89 teaching code for system-native GUI development**
+**Independent native ReAction teaching examples for AmigaOS 3.2+**  
+**Plain C89 lessons for disciplined system-native GUI development**
 
 ReXamples is a focused teaching project for **ReAction** on **AmigaOS 3.2+**.
 
-It exists to demonstrate how graphical applications should be structured when built in a **native AmigaOS style** using:
+It exists to show how graphical applications should be structured when built in a
+**native AmigaOS style** using:
 
 - ReAction
 - Intuition
@@ -36,7 +37,7 @@ ReXamples teaches:
 ReXamples does not aim to:
 
 - imitate other GUI systems
-- preserve naming or structure from non-native toolkits
+- preserve foreign naming, structure, or mental models
 - hide ReAction behind heavy abstraction layers
 - teach framework-agnostic GUI design
 - optimize architecture around backward-compatibility concerns
@@ -63,7 +64,7 @@ Each example follows the same core rules:
 
 ## Repository structure
 
-Each example is self-contained and focuses on one core concept.
+Each lesson is self-contained and focuses on one core concept.
 
 Suggested learning order:
 
@@ -87,6 +88,8 @@ Suggested learning order:
 18. `18_RegisterPages`
 19. `19_EventDispatch`
 
+See `docs/curriculum.md` for the full learning path.
+
 ## What defines ReXamples
 
 ReXamples is built to show not only what works, but what good native style looks like on AmigaOS:
@@ -95,7 +98,21 @@ ReXamples is built to show not only what works, but what good native style looks
 - objects are disposed explicitly
 - partial initialization failures are rolled back correctly
 - event handling remains visible and understandable
-- each example stays focused on a single teaching goal
+- each lesson stays focused on a single teaching goal
+
+## Documentation
+
+ReXamples treats documentation as part of the teaching contract.
+
+The project documentation is organized as follows:
+
+- `docs/manifesto.md` — project identity and intent
+- `docs/rules.md` — core project rules
+- `docs/style-guide.md` — code style baseline
+- `docs/documentation-style.md` — structured in-code documentation rules
+- `docs/curriculum.md` — lesson sequence and teaching progression
+- `docs/review-template.md` — review checklist
+- `docs/review-blockers.md` — hard rejection criteria
 
 ## Audience
 
@@ -111,9 +128,22 @@ ReXamples is for:
 ReXamples is an independent native ReAction teaching repository.
 
 Its purpose is not comparison, emulation, or adaptation.  
-Its purpose is to teach **ReAction on its own terms**, in a form that is clear, disciplined, and genuinely useful for AmigaOS development.
+Its purpose is to teach **ReAction on its own terms**, in a form that is clear,
+disciplined, and genuinely useful for AmigaOS development.
+
+## Contributing
+
+Contributions are welcome, but ReXamples accepts teaching-quality native examples only.
+
+Please read:
+
+- `CONTRIBUTING.md`
+- `docs/manifesto.md`
+- `docs/rules.md`
+- `docs/style-guide.md`
+
+before submitting changes.
 
 ## License
 
 See repository license information.
-
