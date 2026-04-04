@@ -147,4 +147,8 @@ before submitting changes.
 
 ## License
 
-See repository license information.
+Source code in this repository is licensed under the **MIT License**.
+
+Written teaching material, including lesson descriptions, curriculum text,
+manifesto text, rules, style guides, and other prose documentation, is licensed separately.
+See **`LICENSE`** and **`LICENSE.docs`** for details.
