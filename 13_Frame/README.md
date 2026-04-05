@@ -2,31 +2,29 @@
 
 ## Purpose
 
-This lesson teaches visual grouping and structural separation without decorative excess.
-
-It introduces framing as a semantic aid, not as ornament.
+This lesson introduces framing as a native grouping aid rather than decoration for its own sake.
 
 ## What you will learn
 
-- how visual grouping helps the reader understand interface structure
-- how a frame or border supports meaning
-- how to keep visual structure native and restrained
+- how a frame-like visual object supports structure
+- how grouping can be made visible without adding logic
+- how visual separation remains part of the object tree
 
 ## Native components used
 
 - `window.class`
 - `layout.gadget`
-- native frame or bevel-style objects
+- `bevel.image`
 
 ## What this lesson deliberately does not cover
 
-- custom drawing
-- theme systems
-- decorative styling experiments
+- decorative styling systems
+- preference panels
+- nested application group logic
 
 ## Why this lesson matters
 
-A good native interface communicates structure visually without turning into display theatre.
+A frame can clarify structure, but only when it serves meaning instead of visual noise.
 
 ## Build notes
 
@@ -37,16 +35,16 @@ A good native interface communicates structure visually without turning into dis
 
 ## Key lifecycle points
 
-- create structural visual objects as part of the normal object tree
-- keep ownership and purpose explicit
-- maintain a readable layout hierarchy
+- create the frame object explicitly
+- keep it inside the normal ownership chain
+- use it as structure, not spectacle
 
 ## Typical mistakes
 
-- treating framing as cosmetics only
-- adding style complexity without teaching value
-- obscuring the lesson behind appearance choices
+- using frames as mere decoration
+- confusing grouping with visual clutter
+- hiding simple structure inside larger abstractions
 
 ## Next lesson
 
-Continue with **`14_Menu_Basic`** to move from gadget interaction to command paths.
+`14_Menu_Basic`

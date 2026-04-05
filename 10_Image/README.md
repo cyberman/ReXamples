@@ -2,31 +2,29 @@
 
 ## Purpose
 
-This lesson teaches how visual objects are integrated and managed as real interface resources.
-
-It introduces non-text, non-input presentation in native ReAction terms.
+This lesson introduces a minimal native visual object without dragging in media handling or file dependencies.
 
 ## What you will learn
 
-- how image-like interface objects participate in the object tree
-- why display resources still need ownership discipline
-- how visual elements support interface structure
+- how a visual object can live in the object tree
+- how image-like presentation differs from interaction
+- how ownership remains explicit even for purely visual elements
 
 ## Native components used
 
 - `window.class`
 - `layout.gadget`
-- BOOPSI/ReAction image-related objects
+- `bevel.image`
 
 ## What this lesson deliberately does not cover
 
-- general-purpose image loading pipelines
-- datatype-heavy media handling
-- custom drawing frameworks
+- datatypes
+- file-based image loading
+- media pipelines
 
 ## Why this lesson matters
 
-Visual elements are easy to treat as decoration. This lesson teaches them as owned interface resources.
+Not every visible element is a gadget. This lesson introduces a native visual object as its own structural concept.
 
 ## Build notes
 
@@ -37,16 +35,16 @@ Visual elements are easy to treat as decoration. This lesson teaches them as own
 
 ## Key lifecycle points
 
-- create the display object explicitly
-- keep ownership and disposal visible
-- keep the lesson focused on display integration, not media systems
+- create the visual object explicitly
+- place it in the normal layout tree
+- dispose it through the same ownership rules as other objects
 
 ## Typical mistakes
 
-- treating images as side detail with no lifecycle
-- introducing too much loading complexity
-- letting visuals overshadow structure
+- equating visual objects with loaded media
+- overengineering the first visual lesson
+- hiding image ownership behind larger helper code
 
 ## Next lesson
 
-Continue with **`11_Slider`** to learn continuous numeric input.
+`11_Slider`

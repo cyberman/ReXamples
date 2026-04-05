@@ -2,15 +2,13 @@
 
 ## Purpose
 
-This lesson teaches continuous numeric input and value-change handling.
-
-It introduces a control whose state is more than simple on/off or one-of-many.
+This lesson introduces a continuous numeric value gadget with explicit readback and visible feedback.
 
 ## What you will learn
 
-- how a slider represents a numeric range
-- how range values are constrained
-- how value changes are handled in the event loop
+- how a slider represents a bounded value
+- how the current level is read explicitly
+- how numeric state changes can remain visible and simple
 
 ## Native components used
 
@@ -20,13 +18,13 @@ It introduces a control whose state is more than simple on/off or one-of-many.
 
 ## What this lesson deliberately does not cover
 
-- complex linked controls
-- persistent numeric preferences
-- background processing
+- preferences storage
+- value binding systems
+- compound numeric models
 
 ## Why this lesson matters
 
-A slider is a clean way to teach range-based input and visible state changes.
+Continuous values are a different interaction category from actions, booleans, and discrete choices.
 
 ## Build notes
 
@@ -37,16 +35,16 @@ A slider is a clean way to teach range-based input and visible state changes.
 
 ## Key lifecycle points
 
-- define min, max, and current value explicitly
-- update state through visible event handling
-- avoid hiding numeric meaning behind arbitrary constants
+- define min, max, and initial level explicitly
+- read the active level explicitly
+- reflect the value visibly after dispatch
 
 ## Typical mistakes
 
-- weak range definition
-- unclear value ownership
-- coupling slider changes to too much secondary logic
+- treating a range control like a button
+- hiding numeric state updates
+- complicating a small value case with too much abstraction
 
 ## Next lesson
 
-Continue with **`12_Space`** to learn that layout also teaches through what it leaves empty.
+`12_Space`

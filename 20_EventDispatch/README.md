@@ -16,8 +16,9 @@ It brings the series together by showing how native event-driven structure remai
 
 - `window.class`
 - `layout.gadget`
-- native gadget and command event handling
-- explicit dispatch logic
+- `button.gadget`
+- `checkbox.gadget`
+- explicit native event handling
 
 ## What this lesson deliberately does not cover
 
@@ -36,6 +37,10 @@ This is the lesson where the whole curriculum proves itself. If event flow is st
 - Recommended toolchain: **vbcc**
 - Reference SDK: **NDK 3.2R4**
 
+## Verified implementation note
+
+This lesson is part of the verified buildable `01`–`20` core lesson series.
+
 ## Key lifecycle points
 
 - keep event arrival, decoding, dispatch, and effect visibly connected
@@ -47,10 +52,6 @@ This is the lesson where the whole curriculum proves itself. If event flow is st
 - hiding control flow behind convenience abstractions
 - recreating foreign notify-style mental models
 - letting event logic become magical instead of readable
-
-## Verified implementation note
-
-This lesson is part of the verified buildable 01–20 core lesson series.
 
 ## Next lesson
 

@@ -2,31 +2,29 @@
 
 ## Purpose
 
-This lesson teaches exclusive choice between multiple options as a distinct interface pattern.
-
-It clarifies the difference between boolean state, chooser selection, and grouped exclusive selection.
+This lesson introduces exclusive selection as its own native interaction pattern.
 
 ## What you will learn
 
-- how exclusive choice differs from a checkbox
-- how grouped options represent one decision
-- how the selected value is handled cleanly
+- how radio-style exclusive selection differs from chooser-based selection
+- how active choice state is read explicitly
+- how the chosen mode is reflected visibly
 
 ## Native components used
 
 - `window.class`
 - `layout.gadget`
-- native exclusive-choice controls
+- `radiobutton.gadget`
 
 ## What this lesson deliberately does not cover
 
-- multi-selection
-- nested option groups
-- persistent preferences
+- dynamic mode systems
+- nested preference models
+- higher-level mode frameworks
 
 ## Why this lesson matters
 
-Good GUI teaching depends on distinguishing similar-looking controls by behaviour, not by appearance alone.
+Exclusive choice is common and should remain understandable without hidden logic or foreign UI models.
 
 ## Build notes
 
@@ -37,16 +35,16 @@ Good GUI teaching depends on distinguishing similar-looking controls by behaviou
 
 ## Key lifecycle points
 
-- create the choice group as one logical decision path
-- keep group state explicit
-- dispatch changes clearly in the event loop
+- define the native label set explicitly
+- read the active selection explicitly
+- update visible state after dispatch
 
 ## Typical mistakes
 
-- using checkboxes to simulate exclusive choice
-- hiding group semantics
-- making the example about too many options at once
+- confusing radio groups with general menu selection
+- burying state updates inside convenience abstractions
+- treating exclusive choice as a special case of everything else
 
 ## Next lesson
 
-Continue with **`10_Image`** to introduce display objects with their own resource character.
+`10_Image`

@@ -2,15 +2,13 @@
 
 ## Purpose
 
-This lesson teaches native single-choice selection with a ReAction chooser gadget.
-
-It introduces controlled selection from a fixed set of options.
+This lesson introduces native single-choice selection from a fixed set of entries.
 
 ## What you will learn
 
-- how a chooser presents multiple predefined options
-- how the active selection is represented
-- how selection changes are handled cleanly
+- how a chooser represents selection state
+- how the selected index is read explicitly
+- how selection can be reflected visibly in the UI
 
 ## Native components used
 
@@ -20,13 +18,13 @@ It introduces controlled selection from a fixed set of options.
 
 ## What this lesson deliberately does not cover
 
-- editable lists
-- dynamic list contents
-- list browser semantics
+- dynamic entry population
+- persistence
+- data binding systems
 
 ## Why this lesson matters
 
-Selection is a core part of practical GUI work, and it should be learned in native terms.
+Selection is a different kind of interface contract than action or boolean state. This lesson makes that distinction explicit.
 
 ## Build notes
 
@@ -37,17 +35,16 @@ Selection is a core part of practical GUI work, and it should be learned in nati
 
 ## Key lifecycle points
 
-- create chooser entries as owned lesson data
-- keep selected value handling explicit
-- dispatch changes through the main event loop
+- provide a fixed native label set
+- keep selected state application-visible
+- update the visible result explicitly after dispatch
 
 ## Typical mistakes
 
-- preserving foreign “cycle” terminology
-- confusing selection with free-form input
-- hiding option ownership or selection decoding
+- hiding selected state inside convenience logic
+- mixing display text and selection logic carelessly
+- overcomplicating a simple single-choice case
 
 ## Next lesson
 
-Continue with **`06_String`** to move from choice to text input.
-
+`06_String`

@@ -2,15 +2,13 @@
 
 ## Purpose
 
-This lesson teaches how to work with simple boolean interface state in a native way.
-
-It introduces the difference between an action gadget and a state gadget.
+This lesson introduces a boolean state gadget and explicit state propagation.
 
 ## What you will learn
 
-- how a checkbox represents on/off state
-- how state is read and interpreted
-- why UI state should remain explicit
+- how a checkbox differs from an action button
+- how boolean state is read explicitly
+- how state changes lead to visible UI updates
 
 ## Native components used
 
@@ -20,13 +18,13 @@ It introduces the difference between an action gadget and a state gadget.
 
 ## What this lesson deliberately does not cover
 
-- complex dependencies between many gadgets
+- preferences systems
 - persistent settings
-- menu-controlled state
+- hidden notify chains
 
 ## Why this lesson matters
 
-A native GUI is not only about actions. It also needs disciplined handling of visible state.
+Not all user input is an action. Some input changes state, and state must remain visible and controlled.
 
 ## Build notes
 
@@ -37,16 +35,16 @@ A native GUI is not only about actions. It also needs disciplined handling of vi
 
 ## Key lifecycle points
 
-- create and own the checkbox as part of the window object tree
-- read state through explicit event handling
-- keep UI state separate from broader application logic
+- create the state gadget explicitly
+- read state through explicit attribute access
+- update visible UI state deliberately
 
 ## Typical mistakes
 
-- treating checkbox state as hidden global state
-- using the gadget as the whole model
-- mixing too much control logic into one lesson
+- treating state and action as the same thing
+- hiding state transitions
+- pushing simple state into larger frameworks too early
 
 ## Next lesson
 
-Continue with **`05_Chooser`** to learn native single-choice selection.
+`05_Chooser`

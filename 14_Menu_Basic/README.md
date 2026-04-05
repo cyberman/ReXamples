@@ -2,31 +2,30 @@
 
 ## Purpose
 
-This lesson teaches native AmigaOS menus as a normal part of the event-driven UI model.
-
-It introduces menu commands without making them look like a separate world.
+This lesson introduces the smallest useful native menu command path.
 
 ## What you will learn
 
-- how a simple native menu is defined
-- how menu commands enter the event path
-- how command dispatch differs from gadget activation
+- how a native menu is created and installed
+- how menu picks are decoded explicitly
+- how command actions remain visible and controlled
 
 ## Native components used
 
-- Intuition menu system
 - `window.class`
-- normal event handling and dispatch
+- `layout.gadget`
+- `gadtools.library` for menu construction
+- Intuition menu message handling
 
 ## What this lesson deliberately does not cover
 
-- large menu trees
-- dynamic menu generation
-- context menus
+- deep menu trees
+- preference persistence
+- application command systems beyond the lesson scope
 
 ## Why this lesson matters
 
-Menus are one of the classic AmigaOS command paths and should be taught as first-class native structure.
+Menus are not gadgets. This lesson introduces a separate native command path that real applications depend on.
 
 ## Build notes
 
@@ -37,16 +36,16 @@ Menus are one of the classic AmigaOS command paths and should be taught as first
 
 ## Key lifecycle points
 
-- create menu definitions under clear ownership
-- install and remove them deterministically
-- dispatch menu events visibly in the main loop
+- create and lay out the menu explicitly
+- install and remove the menu strip explicitly
+- decode menu picks through the Intuition path
 
 ## Typical mistakes
 
-- treating menu logic as special-case magic
-- burying IDs or command mapping
-- overloading a basic lesson with advanced state handling
+- treating menus like ordinary gadget input
+- hiding command routing inside convenience logic
+- leaving menu lifetime unclear
 
 ## Next lesson
 
-Continue with **`15_Menu_Advanced`** to extend menu structure in a controlled way.
+`15_Menu_Advanced`

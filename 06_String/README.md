@@ -2,15 +2,13 @@
 
 ## Purpose
 
-This lesson teaches text input with explicit buffers and clear ownership.
-
-It introduces the first case where application-managed storage becomes central to the lesson.
+This lesson introduces native string input with explicit application-owned buffer handling.
 
 ## What you will learn
 
-- how a string gadget uses caller-owned storage
-- why buffer size and ownership must be explicit
-- how to handle text input without guesswork
+- how a string gadget uses an application buffer
+- how buffer ownership stays explicit
+- how entered text is read and reflected deliberately
 
 ## Native components used
 
@@ -20,13 +18,13 @@ It introduces the first case where application-managed storage becomes central t
 
 ## What this lesson deliberately does not cover
 
-- full text validation frameworks
+- validation frameworks
 - file I/O
-- persistent document editing
+- document editing
 
 ## Why this lesson matters
 
-Text input is one of the fastest ways to teach whether ownership discipline is real or only claimed.
+This is the first lesson where application-owned text storage becomes part of the UI contract.
 
 ## Build notes
 
@@ -37,17 +35,16 @@ Text input is one of the fastest ways to teach whether ownership discipline is r
 
 ## Key lifecycle points
 
-- allocate or define the input buffer under explicit ownership
-- bind buffer and gadget clearly
-- keep failure and cleanup paths readable
+- initialize the application buffer before opening the window
+- give the gadget controlled access to the buffer
+- keep readback and UI update explicit
 
 ## Typical mistakes
 
-- unclear buffer ownership
-- weak maximum-length handling
-- treating text input as magic instead of contract
+- hiding buffer ownership
+- assuming text input owns its own application model
+- introducing document logic too early
 
 ## Next lesson
 
-Continue with **`07_ListBrowser`** to work with structured collections.
-
+`07_TextEditor`

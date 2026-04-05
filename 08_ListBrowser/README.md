@@ -2,16 +2,13 @@
 
 ## Purpose
 
-This lesson teaches structured list display, entry management, and selection handling.
-
-It moves from editable text to structured collections and shows how visible list data
-and user selection fit into disciplined native ReAction code.
+This lesson introduces a small native list model with explicit node ownership and selection handling.
 
 ## What you will learn
 
-- how a native list browser presents structured entries
-- how list entries are managed as real data
-- how selection fits into event-driven UI flow
+- how list browser entries are created explicitly
+- how list ownership is kept in the application
+- how selected rows are handled through explicit dispatch
 
 ## Native components used
 
@@ -21,13 +18,13 @@ and user selection fit into disciplined native ReAction code.
 
 ## What this lesson deliberately does not cover
 
-- in-place editing
+- virtual list models
 - sorting frameworks
-- large data models
+- large data abstractions
 
 ## Why this lesson matters
 
-A list is not just a bigger chooser. It introduces data structure and presentation working together.
+This is the first lesson where the UI presents structured data that the application owns and frees deliberately.
 
 ## Build notes
 
@@ -38,16 +35,16 @@ A list is not just a bigger chooser. It introduces data structure and presentati
 
 ## Key lifecycle points
 
-- create and own list data explicitly
-- attach it to the gadget in a visible way
-- release list-related resources deterministically
+- initialize the list explicitly
+- allocate nodes explicitly
+- free nodes explicitly in teardown paths
 
 ## Typical mistakes
 
-- treating a list as only text on screen
-- hiding entry ownership
-- mixing too much list logic into one lesson
+- hiding data ownership inside the widget layer
+- assuming list models clean themselves up
+- using non-C89 shortcuts in support code
 
 ## Next lesson
 
-Continue with **`09_RadioChoice`** for exclusive selection as a distinct UI pattern.
+`09_RadioChoice`

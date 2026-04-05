@@ -2,31 +2,30 @@
 
 ## Purpose
 
-This lesson builds on the basic menu lesson with richer menu structure and controlled state.
-
-It introduces the next level of command organization without losing clarity.
+This lesson extends the native menu path with multiple menus and toggle state.
 
 ## What you will learn
 
-- how more capable menu structures are organized
-- how menu state can be controlled deliberately
-- how command paths remain understandable as menus grow
+- how a richer menu structure is laid out
+- how checked state is read explicitly
+- how menu state can influence visible UI state
 
 ## Native components used
 
-- Intuition menu system
 - `window.class`
-- explicit menu command dispatch
+- `layout.gadget`
+- `gadtools.library`
+- Intuition menu message handling
 
 ## What this lesson deliberately does not cover
 
-- full application command frameworks
-- scripting
-- document model complexity
+- full command systems
+- persistence
+- large application menu frameworks
 
 ## Why this lesson matters
 
-A serious native application usually needs more than one or two menu items. This lesson teaches how to scale without turning the code into noise.
+Command paths become more realistic once menus can express state, not just one-shot actions.
 
 ## Build notes
 
@@ -37,16 +36,16 @@ A serious native application usually needs more than one or two menu items. This
 
 ## Key lifecycle points
 
-- keep menu creation and teardown explicit
-- preserve readable command mapping
-- keep menu state changes traceable
+- create the menu tree explicitly
+- decode checked state directly from selected items
+- update visible application state deliberately
 
 ## Typical mistakes
 
-- making menu growth collapse readability
-- entangling menu logic with unrelated application state
-- hiding command identity behind abstraction
+- hiding menu state transitions
+- confusing command selection with gadget notify thinking
+- letting menu handling become magical
 
 ## Next lesson
 
-Continue with **`16_Gauge`** to separate display-only status from user-controlled input.
+`16_Gauge`

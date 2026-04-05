@@ -2,31 +2,29 @@
 
 ## Purpose
 
-This lesson teaches that layout spacing and visual breathing room are part of interface design.
-
-It focuses on structure rather than interaction.
+This lesson teaches that layout structure also includes deliberate empty space.
 
 ## What you will learn
 
-- how spacing contributes to readable layout
-- why empty space is an intentional design decision
-- how layout clarity improves usability without adding features
+- how spacing becomes part of visible composition
+- how empty areas can support grouping and clarity
+- how layout structure is more than control placement
 
 ## Native components used
 
 - `window.class`
 - `layout.gadget`
-- native spacing tools
+- `space.gadget`
 
 ## What this lesson deliberately does not cover
 
-- new gadget behaviour
-- menus
-- state management
+- styling systems
+- theme logic
+- dynamic spacing policies
 
 ## Why this lesson matters
 
-Many weak examples teach only controls. This lesson teaches that native GUI quality also depends on structure.
+Readable interfaces depend as much on what is not crowded together as on the controls themselves.
 
 ## Build notes
 
@@ -37,16 +35,16 @@ Many weak examples teach only controls. This lesson teaches that native GUI qual
 
 ## Key lifecycle points
 
-- keep layout structure readable in code
-- use spacing deliberately, not accidentally
-- preserve the same clean lifecycle even in a visually focused lesson
+- create spacing objects explicitly
+- compose them through normal layout ownership
+- treat empty structure as first-class layout information
 
 ## Typical mistakes
 
-- treating spacing as filler instead of structure
-- cluttering the lesson with extra gadgets
-- losing readability in the object tree
+- treating space as accidental
+- replacing structure with hardcoded pixel thinking
+- ignoring ownership just because an object is visually empty
 
 ## Next lesson
 
-Continue with **`13_Frame`** to learn visual grouping without decorative excess.
+`13_Frame`
