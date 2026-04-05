@@ -2,31 +2,30 @@
 
 ## Purpose
 
-This lesson teaches multi-page interface organization with clear page-level structure.
-
-It shows how a larger interface can remain readable by being divided into coherent sections.
+This lesson teaches page-oriented structure and register navigation in a form that matches the verified native build baseline.
 
 ## What you will learn
 
-- how native page/register structures organize content
-- how page selection affects visible interface state
-- how larger GUI composition remains manageable
+- how register navigation can be modeled explicitly
+- how active page state can remain application-owned
+- how displayed content can be updated deliberately on tab changes
 
 ## Native components used
 
 - `window.class`
 - `layout.gadget`
-- native register or page-management objects
+- `clicktab.gadget`
+- `button.gadget` used as a conservative read-only content carrier
 
 ## What this lesson deliberately does not cover
 
 - full preferences applications
-- dynamic page generation
-- cross-page data persistence policies
+- hidden page-management frameworks
+- unavailable gadget assumptions
 
 ## Why this lesson matters
 
-Page-based structure is one of the first places where interface architecture becomes visible as architecture.
+Tabbed structure is common, but the important lesson is not the visual tab itself. The important lesson is explicit page state and controlled content switching.
 
 ## Build notes
 
@@ -35,18 +34,24 @@ Page-based structure is one of the first places where interface architecture bec
 - Recommended toolchain: **vbcc**
 - Reference SDK: **NDK 3.2R4**
 
+## Verified implementation note
+
+In the verified build environment, this lesson is implemented **without** `page.gadget`.
+
+The active page is tracked explicitly, and the visible content is updated deliberately when the selected register changes.
+
 ## Key lifecycle points
 
-- create each page under visible ownership
-- make page structure readable in code
-- keep page switching and event flow explicit
+- own the active page state in the application
+- treat register selection as explicit input
+- update visible content deliberately
 
 ## Typical mistakes
 
-- collapsing multiple lessons into one giant multi-page demo
-- hiding page semantics behind convenience helpers
-- letting navigation logic sprawl
+- assuming unavailable classes are part of the verified baseline
+- hiding page state inside convenience logic
+- turning a structural lesson into a full application
 
 ## Next lesson
 
-Continue with **`20_EventDispatch`** to bring the series together with explicit routing of UI events.
+`20_EventDispatch`

@@ -2,31 +2,29 @@
 
 ## Purpose
 
-This lesson teaches static or structured text presentation beyond simple labels.
-
-It focuses on readable presentation rather than editable text.
+This lesson teaches simple native text presentation without turning the example into an editor or document system.
 
 ## What you will learn
 
-- how display text differs from input text
-- how text can support structure and explanation in an interface
-- how text presentation fits into a native object tree
+- how static text can support structure
+- how text display differs from text editing
+- how presentation can remain explicit and small
 
 ## Native components used
 
 - `window.class`
 - `layout.gadget`
-- native text display elements
+- `button.gadget` used as a conservative read-only text carrier
 
 ## What this lesson deliberately does not cover
 
 - text editing
-- document viewers
-- general-purpose text formatting engines
+- document management
+- file I/O
 
 ## Why this lesson matters
 
-A GUI teaches through text as well as through controls. Text display deserves its own clear lesson.
+A GUI must not treat all text as editable. This lesson keeps display and editing conceptually separate.
 
 ## Build notes
 
@@ -37,16 +35,16 @@ A GUI teaches through text as well as through controls. Text display deserves it
 
 ## Key lifecycle points
 
-- treat display text as part of structural interface composition
-- keep ownership visible for any backing data
-- keep the lesson focused on presentation, not editing
+- create display objects explicitly
+- place them in a normal layout
+- keep the event loop minimal and visible
 
 ## Typical mistakes
 
-- blurring the line between input and display
-- overengineering formatting
-- turning a text lesson into a document system
+- using an editor where display is enough
+- hiding presentation behind a larger document abstraction
+- mixing display and editing concerns too early
 
 ## Next lesson
 
-Continue with **`18_ScrollableLayout`** to handle content that exceeds the visible area.
+`18_ScrollableLayout`

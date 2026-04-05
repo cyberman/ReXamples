@@ -48,6 +48,10 @@ This is the lesson where the whole curriculum proves itself. If event flow is st
 - recreating foreign notify-style mental models
 - letting event logic become magical instead of readable
 
+## Verified implementation note
+
+This lesson is part of the verified buildable 01–20 core lesson series.
+
 ## Next lesson
 
 This is the final lesson in the core ReXamples curriculum.

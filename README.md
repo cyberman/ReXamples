@@ -1,4 +1,4 @@
-# ReXamples - code examples in plain C for ReAction
+# ReXamples - code examples in plain C for ReAction GUI
 
 **Independent native ReAction teaching examples for AmigaOS 3.2+**  
 **Plain C89 lessons for disciplined system-native GUI development**
@@ -144,6 +144,12 @@ Please read:
 - `docs/style-guide.md`
 
 before submitting changes.
+
+## Verified build status
+
+The core lesson series `01` through `20` has been verified to build in the current repository baseline.
+
+See `docs/technical-baseline.md` for the implementation line that was actually validated.
 
 ## License
 

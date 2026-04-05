@@ -2,31 +2,30 @@
 
 ## Purpose
 
-This lesson teaches how larger-than-visible content is structured in a native scrollable interface.
-
-It introduces composition where visible space and content size no longer match.
+This lesson introduces the idea that visible space and content size are not always the same.
 
 ## What you will learn
 
-- how native scrolling relates to layout and content structure
-- how scrollable composition remains readable in code
-- how to keep interface size and content size conceptually separate
+- how to represent a larger content region
+- how scrolling relates to structure rather than document complexity
+- how native layout and scroller elements can be kept explicit
 
 ## Native components used
 
 - `window.class`
 - `layout.gadget`
-- native scrollable layout mechanisms
+- `button.gadget`
+- `scroller.gadget`
 
 ## What this lesson deliberately does not cover
 
 - document viewers
-- custom virtual widget systems
-- arbitrary large data models
+- text engines
+- automatic content virtualization
 
 ## Why this lesson matters
 
-Scrollability is where many interfaces stop being simple. This lesson teaches complexity without surrendering structure.
+Interfaces often need to present more structure than a single visible region can comfortably show. This lesson introduces that case in a small native form.
 
 ## Build notes
 
@@ -37,16 +36,16 @@ Scrollability is where many interfaces stop being simple. This lesson teaches co
 
 ## Key lifecycle points
 
-- keep content ownership explicit
-- make scrollable structure readable in the object tree
-- preserve clear event handling around navigation and exit
+- keep content objects explicit
+- keep the scroller explicit
+- do not hide layout structure behind abstraction layers
 
 ## Typical mistakes
 
-- teaching a foreign virtual-group mental model
-- hiding the layout relationship between content and viewport
-- adding too much content logic at once
+- treating scrolling as a document-only concept
+- introducing unnecessary complexity too early
+- hiding content ownership and layout structure
 
 ## Next lesson
 
-Continue with **`19_RegisterPages`** to organize a larger interface into distinct pages.
+`19_RegisterPages`
