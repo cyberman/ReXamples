@@ -1,4 +1,4 @@
-# ReXamples - Examples for ReAction
+# ReXamples - code examples in plain C for ReAction
 
 **Independent native ReAction teaching examples for AmigaOS 3.2+**  
 **Plain C89 lessons for disciplined system-native GUI development**
