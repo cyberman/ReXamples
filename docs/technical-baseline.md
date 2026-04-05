@@ -65,4 +65,3 @@ The current repository state was verified in a real build environment and includ
 This note is not a design manifesto.
 
 It is a compact record of the implementation baseline that has actually been proven by building the lesson series.
-
