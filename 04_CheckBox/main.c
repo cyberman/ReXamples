@@ -1,12 +1,19 @@
 #include <string.h>
+#include <stdio.h>
 
 #include <exec/types.h>
 #include <exec/libraries.h>
-#include <intuition/intuition.h>
-#include <intuition/icclass.h>
+#include <utility/tagitem.h>
+#include <dos/dosextens.h>
 
-#include <reaction/reaction.h>
-#include <reaction/reaction_macros.h>
+#include <intuition/intuition.h>
+#include <intuition/classes.h>
+#include <intuition/classusr.h>
+#include <intuition/intuitionbase.h>
+
+#include <classes/window.h>
+#include <gadgets/layout.h>
+#include <gadgets/checkbox.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -14,16 +21,27 @@
 #include <proto/layout.h>
 #include <proto/checkbox.h>
 
+/* vbcc proto headers used here expect global library bases. */
+struct IntuitionBase *IntuitionBase = NULL;
+struct Library *WindowBase = NULL;
+struct Library *LayoutBase = NULL;
+struct Library *CheckBoxBase = NULL;
+
+/* Local prototype needed by this build setup. */
+ULONG DoMethodA(Object *obj, Msg msg);
+
 #define GID_ENABLED  1
 
 struct App
 {
-    struct Library *WindowBase;
-    struct Library *LayoutBase;
-    struct Library *CheckBoxBase;
+    struct Library *IntuitionLib;
+    struct Library *WindowLib;
+    struct Library *LayoutLib;
+    struct Library *CheckBoxLib;
 
+    Object *check_obj;
+    Object *root_layout;
     Object *win_obj;
-    Object *gad_enabled;
 
     struct Window *win;
 
@@ -52,71 +70,93 @@ static int UI_Create(struct App *app)
 {
     int ok;
 
+    struct TagItem check_tags[] =
+    {
+        { GA_ID,        GID_ENABLED },
+        { GA_RelVerify, TRUE },
+        { GA_Text,      (ULONG)"_Enabled" },
+        { GA_Selected,  FALSE },
+        { TAG_DONE,     0 }
+    };
+
+    struct TagItem root_layout_tags[] =
+    {
+        { LAYOUT_Orientation, LAYOUT_ORIENT_VERT },
+        { LAYOUT_SpaceOuter,  TRUE },
+        { LAYOUT_AddChild,    0 },   /* checkbox */
+        { TAG_DONE,           0 }
+    };
+
+    struct TagItem window_tags[] =
+    {
+        { WA_Title,        (ULONG)"ReXamples - 04_CheckBox [OFF]" },
+        { WA_Activate,     TRUE },
+        { WA_DepthGadget,  TRUE },
+        { WA_DragBar,      TRUE },
+        { WA_CloseGadget,  TRUE },
+        { WA_SizeGadget,   TRUE },
+        { WA_IDCMP,        IDCMP_CLOSEWINDOW },
+        { WINDOW_Position, WPOS_CENTERSCREEN },
+        { WINDOW_Layout,   0 },   /* filled after root layout exists */
+        { TAG_DONE,        0 }
+    };
+
     ok = 0;
 
-    app->WindowBase = OpenLibrary("window.class", 47);
-    if (app->WindowBase == NULL)
+    app->IntuitionLib = OpenLibrary("intuition.library", 39);
+    if (app->IntuitionLib == NULL)
+        goto out;
+    IntuitionBase = (struct IntuitionBase *)app->IntuitionLib;
+
+    app->WindowLib = OpenLibrary("window.class", 47);
+    if (app->WindowLib == NULL)
+        goto out;
+    WindowBase = app->WindowLib;
+
+    app->LayoutLib = OpenLibrary("layout.gadget", 47);
+    if (app->LayoutLib == NULL)
+        goto out;
+    LayoutBase = app->LayoutLib;
+
+    app->CheckBoxLib = OpenLibrary("checkbox.gadget", 47);
+    if (app->CheckBoxLib == NULL)
+        goto out;
+    CheckBoxBase = app->CheckBoxLib;
+
+    app->check_obj = NewObjectA(CHECKBOX_GetClass(), NULL, check_tags);
+    if (app->check_obj == NULL)
         goto out;
 
-    app->LayoutBase = OpenLibrary("layout.gadget", 47);
-    if (app->LayoutBase == NULL)
+    root_layout_tags[2].ti_Data = (ULONG)app->check_obj;
+
+    app->root_layout = NewObjectA(LAYOUT_GetClass(), NULL, root_layout_tags);
+    if (app->root_layout == NULL)
         goto out;
 
-    app->CheckBoxBase = OpenLibrary("checkbox.gadget", 47);
-    if (app->CheckBoxBase == NULL)
-        goto out;
+    window_tags[8].ti_Data = (ULONG)app->root_layout;
 
-    app->enabled_state = 0;
-
-    app->gad_enabled =
-        CheckBoxObject,
-            GA_ID, GID_ENABLED,
-            GA_Text, (ULONG)"_Enabled",
-            GA_Selected, FALSE,
-        End;
-
-    if (app->gad_enabled == NULL)
-        goto out;
-
-    app->win_obj =
-        WindowObject,
-            WA_Title,       (ULONG)"ReXamples - 04_CheckBox [OFF]",
-            WA_Activate,    TRUE,
-            WA_DepthGadget, TRUE,
-            WA_DragBar,     TRUE,
-            WA_CloseGadget, TRUE,
-            WA_SizeGadget,  TRUE,
-            WA_IDCMP,       IDCMP_CLOSEWINDOW,
-            WINDOW_Position, WPOS_CENTERSCREEN,
-            WINDOW_Layout,
-                VLayoutObject,
-                    LAYOUT_SpaceOuter, TRUE,
-                    StartMember, app->gad_enabled, EndMember,
-                End,
-        End;
-
+    app->win_obj = NewObjectA(WINDOW_GetClass(), NULL, window_tags);
     if (app->win_obj == NULL)
         goto out;
 
     ok = 1;
 
 out:
-    if (!ok && app->gad_enabled != NULL)
-    {
-        DisposeObject(app->gad_enabled);
-        app->gad_enabled = NULL;
-    }
-
     return ok;
 }
 
 static int UI_Open(struct App *app)
 {
-    app->win = (struct Window *)RA_OpenWindow(app->win_obj);
+    ULONG open_msg[2];
+
+    open_msg[0] = WM_OPEN;
+    open_msg[1] = 0;
+
+    app->win = (struct Window *)DoMethodA(app->win_obj, (Msg)open_msg);
     if (app->win == NULL)
         return 0;
 
-    app->win_sigmask = RA_HandleInput(app->win_obj, NULL);
+    app->win_sigmask = 1UL << app->win->UserPort->mp_SigBit;
     app->running = 1;
 
     UI_UpdateTitle(app);
@@ -126,9 +166,14 @@ static int UI_Open(struct App *app)
 
 static void UI_Close(struct App *app)
 {
+    ULONG close_msg[2];
+
     if (app->win != NULL)
     {
-        RA_CloseWindow(app->win_obj);
+        close_msg[0] = WM_CLOSE;
+        close_msg[1] = 0;
+
+        DoMethodA(app->win_obj, (Msg)close_msg);
         app->win = NULL;
     }
 
@@ -141,71 +186,71 @@ static void UI_Destroy(struct App *app)
     {
         DisposeObject(app->win_obj);
         app->win_obj = NULL;
-        app->gad_enabled = NULL;
+
+        app->root_layout = NULL;
+        app->check_obj = NULL;
     }
-    else if (app->gad_enabled != NULL)
+    else
     {
-        DisposeObject(app->gad_enabled);
-        app->gad_enabled = NULL;
+        if (app->root_layout != NULL)
+        {
+            DisposeObject(app->root_layout);
+            app->root_layout = NULL;
+            app->check_obj = NULL;
+        }
+        else if (app->check_obj != NULL)
+        {
+            DisposeObject(app->check_obj);
+            app->check_obj = NULL;
+        }
     }
 
-    if (app->CheckBoxBase != NULL)
+    if (app->CheckBoxLib != NULL)
     {
-        CloseLibrary(app->CheckBoxBase);
-        app->CheckBoxBase = NULL;
+        CloseLibrary(app->CheckBoxLib);
+        app->CheckBoxLib = NULL;
+        CheckBoxBase = NULL;
     }
 
-    if (app->LayoutBase != NULL)
+    if (app->LayoutLib != NULL)
     {
-        CloseLibrary(app->LayoutBase);
-        app->LayoutBase = NULL;
+        CloseLibrary(app->LayoutLib);
+        app->LayoutLib = NULL;
+        LayoutBase = NULL;
     }
 
-    if (app->WindowBase != NULL)
+    if (app->WindowLib != NULL)
     {
-        CloseLibrary(app->WindowBase);
-        app->WindowBase = NULL;
+        CloseLibrary(app->WindowLib);
+        app->WindowLib = NULL;
+        WindowBase = NULL;
+    }
+
+    if (app->IntuitionLib != NULL)
+    {
+        CloseLibrary(app->IntuitionLib);
+        app->IntuitionLib = NULL;
+        IntuitionBase = NULL;
     }
 }
 
-static void App_HandleInput(struct App *app)
+static void App_DispatchEnabled(struct App *app)
 {
-    ULONG result;
-    UWORD code;
     ULONG selected;
 
-    while ((result = RA_HandleInput(app->win_obj, &code)) != WMHI_LASTMSG)
-    {
-        switch (result & WMHI_CLASSMASK)
-        {
-            case WMHI_CLOSEWINDOW:
-                app->running = 0;
-                break;
+    GetAttr(GA_Selected, app->check_obj, &selected);
+    app->enabled_state = (selected != 0);
 
-            case WMHI_GADGETUP:
-                switch (result & WMHI_GADGETMASK)
-                {
-                    case GID_ENABLED:
-                        GetAttr(GA_Selected, app->gad_enabled, &selected);
-                        app->enabled_state = (selected != 0);
-                        UI_UpdateTitle(app);
-                        break;
-
-                    default:
-                        break;
-                }
-                break;
-
-            default:
-                break;
-        }
-    }
+    UI_UpdateTitle(app);
 }
 
 static void App_Run(struct App *app)
 {
     ULONG signals;
+    ULONG result;
+    WORD code;
     ULONG waitmask;
+    struct wmHandle handle_msg;
 
     waitmask = app->win_sigmask | SIGBREAKF_CTRL_C;
 
@@ -217,7 +262,35 @@ static void App_Run(struct App *app)
             app->running = 0;
 
         if (signals & app->win_sigmask)
-            App_HandleInput(app);
+        {
+            handle_msg.MethodID = WM_HANDLEINPUT;
+            handle_msg.wmh_Code = &code;
+
+            while ((result = DoMethodA(app->win_obj, (Msg)&handle_msg)) != WMHI_LASTMSG)
+            {
+                switch (result & WMHI_CLASSMASK)
+                {
+                    case WMHI_CLOSEWINDOW:
+                        app->running = 0;
+                        break;
+
+                    case WMHI_GADGETUP:
+                        switch (result & WMHI_GADGETMASK)
+                        {
+                            case GID_ENABLED:
+                                App_DispatchEnabled(app);
+                                break;
+
+                            default:
+                                break;
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
     }
 }
 
@@ -244,4 +317,3 @@ out:
 
     return rc;
 }
-

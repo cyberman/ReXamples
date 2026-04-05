@@ -2,11 +2,17 @@
 
 #include <exec/types.h>
 #include <exec/libraries.h>
-#include <intuition/intuition.h>
-#include <intuition/icclass.h>
+#include <utility/tagitem.h>
+#include <dos/dosextens.h>
 
-#include <reaction/reaction.h>
-#include <reaction/reaction_macros.h>
+#include <intuition/intuition.h>
+#include <intuition/classes.h>
+#include <intuition/classusr.h>
+#include <intuition/intuitionbase.h>
+
+#include <classes/window.h>
+#include <gadgets/layout.h>
+#include <gadgets/texteditor.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -14,16 +20,27 @@
 #include <proto/layout.h>
 #include <proto/texteditor.h>
 
-#define GID_EDITOR   1
+/* vbcc proto headers used here expect global library bases. */
+struct IntuitionBase *IntuitionBase = NULL;
+struct Library *WindowBase = NULL;
+struct Library *LayoutBase = NULL;
+struct Library *TextFieldBase = NULL;
+
+/* Local prototype needed by this build setup. */
+ULONG DoMethodA(Object *obj, Msg msg);
+
+#define GID_EDITOR  1
 
 struct App
 {
-    struct Library *WindowBase;
-    struct Library *LayoutBase;
-    struct Library *TextEditorBase;
+    struct Library *IntuitionLib;
+    struct Library *WindowLib;
+    struct Library *LayoutLib;
+    struct Library *TextEditorLib;
 
+    Object *editor_obj;
+    Object *root_layout;
     Object *win_obj;
-    Object *gad_editor;
 
     struct Window *win;
 
@@ -31,109 +48,101 @@ struct App
     int running;
 };
 
-/*****************************************************************************
- *
- *  App_Clear
- *
- *  Purpose:
- *      Reset lesson state to a known empty baseline.
- *
- *****************************************************************************/
-
 static void App_Clear(struct App *app)
 {
     memset(app, 0, sizeof(*app));
 }
 
-/*****************************************************************************
- *
- *  UI_Create
- *
- *  Purpose:
- *      Create a minimal multiline editor lesson.
- *
- *  Notes:
- *      This lesson intentionally focuses on editor presence, ownership,
- *      and lifecycle. It does not yet teach document architecture.
- *
- *****************************************************************************/
-
 static int UI_Create(struct App *app)
 {
     int ok;
 
+    struct TagItem editor_tags[] =
+    {
+        { GA_ID,        GID_EDITOR },
+        { GA_RelVerify, TRUE },
+        { GA_TabCycle,  TRUE },
+        { TAG_DONE,     0 }
+    };
+
+    struct TagItem root_layout_tags[] =
+    {
+        { LAYOUT_Orientation, LAYOUT_ORIENT_VERT },
+        { LAYOUT_SpaceOuter,  TRUE },
+        { LAYOUT_AddChild,    0 },   /* editor */
+        { TAG_DONE,           0 }
+    };
+
+    struct TagItem window_tags[] =
+    {
+        { WA_Title,        (ULONG)"ReXamples - 07_TextEditor" },
+        { WA_Activate,     TRUE },
+        { WA_DepthGadget,  TRUE },
+        { WA_DragBar,      TRUE },
+        { WA_CloseGadget,  TRUE },
+        { WA_SizeGadget,   TRUE },
+        { WA_IDCMP,        IDCMP_CLOSEWINDOW },
+        { WINDOW_Position, WPOS_CENTERSCREEN },
+        { WINDOW_Layout,   0 },   /* filled after root layout exists */
+        { TAG_DONE,        0 }
+    };
+
     ok = 0;
 
-    app->WindowBase = OpenLibrary("window.class", 47);
-    if (app->WindowBase == NULL)
+    app->IntuitionLib = OpenLibrary("intuition.library", 39);
+    if (app->IntuitionLib == NULL)
+        goto out;
+    IntuitionBase = (struct IntuitionBase *)app->IntuitionLib;
+
+    app->WindowLib = OpenLibrary("window.class", 47);
+    if (app->WindowLib == NULL)
+        goto out;
+    WindowBase = app->WindowLib;
+
+    app->LayoutLib = OpenLibrary("layout.gadget", 47);
+    if (app->LayoutLib == NULL)
+        goto out;
+    LayoutBase = app->LayoutLib;
+
+    app->TextEditorLib = OpenLibrary("texteditor.gadget", 47);
+    if (app->TextEditorLib == NULL)
+        goto out;
+    TextFieldBase = app->TextEditorLib;
+
+    app->editor_obj = NewObjectA(TEXTEDITOR_GetClass(), NULL, editor_tags);
+    if (app->editor_obj == NULL)
         goto out;
 
-    app->LayoutBase = OpenLibrary("layout.gadget", 47);
-    if (app->LayoutBase == NULL)
+    root_layout_tags[2].ti_Data = (ULONG)app->editor_obj;
+
+    app->root_layout = NewObjectA(LAYOUT_GetClass(), NULL, root_layout_tags);
+    if (app->root_layout == NULL)
         goto out;
 
-    app->TextEditorBase = OpenLibrary("texteditor.gadget", 47);
-    if (app->TextEditorBase == NULL)
-        goto out;
+    window_tags[8].ti_Data = (ULONG)app->root_layout;
 
-    app->gad_editor =
-        TextEditorObject,
-            GA_ID, GID_EDITOR,
-            GA_RelVerify, TRUE,
-            GA_TabCycle, TRUE,
-        End;
-
-    if (app->gad_editor == NULL)
-        goto out;
-
-    app->win_obj =
-        WindowObject,
-            WA_Title,       (ULONG)"ReXamples - 07_TextEditor",
-            WA_Activate,    TRUE,
-            WA_DepthGadget, TRUE,
-            WA_DragBar,     TRUE,
-            WA_CloseGadget, TRUE,
-            WA_SizeGadget,  TRUE,
-            WA_IDCMP,       IDCMP_CLOSEWINDOW,
-            WINDOW_Position, WPOS_CENTERSCREEN,
-            WINDOW_Layout,
-                VLayoutObject,
-                    LAYOUT_SpaceOuter, TRUE,
-                    StartMember, app->gad_editor, EndMember,
-                End,
-        End;
-
+    app->win_obj = NewObjectA(WINDOW_GetClass(), NULL, window_tags);
     if (app->win_obj == NULL)
         goto out;
 
     ok = 1;
 
 out:
-    if (!ok && app->gad_editor != NULL)
-    {
-        DisposeObject(app->gad_editor);
-        app->gad_editor = NULL;
-    }
-
     return ok;
 }
 
-/*****************************************************************************
- *
- *  UI_Open
- *
- *  Purpose:
- *      Open the editor lesson window and prepare signal handling.
- *
- *****************************************************************************/
-
 static int UI_Open(struct App *app)
 {
-    app->win = (struct Window *)RA_OpenWindow(app->win_obj);
+    ULONG open_msg[2];
+
+    open_msg[0] = WM_OPEN;
+    open_msg[1] = 0;
+
+    app->win = (struct Window *)DoMethodA(app->win_obj, (Msg)open_msg);
     if (app->win == NULL)
         return 0;
 
-    app->win_sigmask = RA_HandleInput(app->win_obj, NULL);
+    app->win_sigmask = 1UL << app->win->UserPort->mp_SigBit;
     app->running = 1;
 
     return 1;
@@ -141,9 +150,14 @@ static int UI_Open(struct App *app)
 
 static void UI_Close(struct App *app)
 {
+    ULONG close_msg[2];
+
     if (app->win != NULL)
     {
-        RA_CloseWindow(app->win_obj);
+        close_msg[0] = WM_CLOSE;
+        close_msg[1] = 0;
+
+        DoMethodA(app->win_obj, (Msg)close_msg);
         app->win = NULL;
     }
 
@@ -156,82 +170,61 @@ static void UI_Destroy(struct App *app)
     {
         DisposeObject(app->win_obj);
         app->win_obj = NULL;
-        app->gad_editor = NULL;
+
+        app->root_layout = NULL;
+        app->editor_obj = NULL;
     }
-    else if (app->gad_editor != NULL)
+    else
     {
-        DisposeObject(app->gad_editor);
-        app->gad_editor = NULL;
-    }
-
-    if (app->TextEditorBase != NULL)
-    {
-        CloseLibrary(app->TextEditorBase);
-        app->TextEditorBase = NULL;
-    }
-
-    if (app->LayoutBase != NULL)
-    {
-        CloseLibrary(app->LayoutBase);
-        app->LayoutBase = NULL;
-    }
-
-    if (app->WindowBase != NULL)
-    {
-        CloseLibrary(app->WindowBase);
-        app->WindowBase = NULL;
-    }
-}
-
-/*****************************************************************************
- *
- *  App_HandleInput
- *
- *  Purpose:
- *      Keep event flow explicit even though this lesson has no rich editor
- *      command set yet.
- *
- *****************************************************************************/
-
-static void App_HandleInput(struct App *app)
-{
-    ULONG result;
-    UWORD code;
-
-    while ((result = RA_HandleInput(app->win_obj, &code)) != WMHI_LASTMSG)
-    {
-        switch (result & WMHI_CLASSMASK)
+        if (app->root_layout != NULL)
         {
-            case WMHI_CLOSEWINDOW:
-                app->running = 0;
-                break;
-
-            case WMHI_GADGETUP:
-                switch (result & WMHI_GADGETMASK)
-                {
-                    case GID_EDITOR:
-                        /*
-                         * This lesson does not yet process editor content.
-                         * It exists to establish multiline editor lifecycle
-                         * and native placement in the object tree.
-                         */
-                        break;
-
-                    default:
-                        break;
-                }
-                break;
-
-            default:
-                break;
+            DisposeObject(app->root_layout);
+            app->root_layout = NULL;
+            app->editor_obj = NULL;
         }
+        else if (app->editor_obj != NULL)
+        {
+            DisposeObject(app->editor_obj);
+            app->editor_obj = NULL;
+        }
+    }
+
+    if (app->TextEditorLib != NULL)
+    {
+        CloseLibrary(app->TextEditorLib);
+        app->TextEditorLib = NULL;
+        TextFieldBase = NULL;
+    }
+
+    if (app->LayoutLib != NULL)
+    {
+        CloseLibrary(app->LayoutLib);
+        app->LayoutLib = NULL;
+        LayoutBase = NULL;
+    }
+
+    if (app->WindowLib != NULL)
+    {
+        CloseLibrary(app->WindowLib);
+        app->WindowLib = NULL;
+        WindowBase = NULL;
+    }
+
+    if (app->IntuitionLib != NULL)
+    {
+        CloseLibrary(app->IntuitionLib);
+        app->IntuitionLib = NULL;
+        IntuitionBase = NULL;
     }
 }
 
 static void App_Run(struct App *app)
 {
     ULONG signals;
+    ULONG result;
+    WORD code;
     ULONG waitmask;
+    struct wmHandle handle_msg;
 
     waitmask = app->win_sigmask | SIGBREAKF_CTRL_C;
 
@@ -243,7 +236,39 @@ static void App_Run(struct App *app)
             app->running = 0;
 
         if (signals & app->win_sigmask)
-            App_HandleInput(app);
+        {
+            handle_msg.MethodID = WM_HANDLEINPUT;
+            handle_msg.wmh_Code = &code;
+
+            while ((result = DoMethodA(app->win_obj, (Msg)&handle_msg)) != WMHI_LASTMSG)
+            {
+                switch (result & WMHI_CLASSMASK)
+                {
+                    case WMHI_CLOSEWINDOW:
+                        app->running = 0;
+                        break;
+
+                    case WMHI_GADGETUP:
+                        switch (result & WMHI_GADGETMASK)
+                        {
+                            case GID_EDITOR:
+                                /*
+                                 * This lesson deliberately stops at editor
+                                 * presence and lifecycle. It does not yet
+                                 * teach document or text-processing logic.
+                                 */
+                                break;
+
+                            default:
+                                break;
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
     }
 }
 
@@ -270,4 +295,3 @@ out:
 
     return rc;
 }
-

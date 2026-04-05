@@ -1,12 +1,19 @@
 #include <string.h>
+#include <stdio.h>
 
 #include <exec/types.h>
 #include <exec/libraries.h>
-#include <intuition/intuition.h>
-#include <intuition/icclass.h>
+#include <utility/tagitem.h>
+#include <dos/dosextens.h>
 
-#include <reaction/reaction.h>
-#include <reaction/reaction_macros.h>
+#include <intuition/intuition.h>
+#include <intuition/classes.h>
+#include <intuition/classusr.h>
+#include <intuition/intuitionbase.h>
+
+#include <classes/window.h>
+#include <gadgets/layout.h>
+#include <gadgets/string.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -14,17 +21,28 @@
 #include <proto/layout.h>
 #include <proto/string.h>
 
-#define GID_NAME  1
-#define NAME_LEN  64
+/* vbcc proto headers used here expect global library bases. */
+struct IntuitionBase *IntuitionBase = NULL;
+struct Library *WindowBase = NULL;
+struct Library *LayoutBase = NULL;
+struct Library *StringBase = NULL;
+
+/* Local prototype needed by this build setup. */
+ULONG DoMethodA(Object *obj, Msg msg);
+
+#define GID_NAME   1
+#define NAME_LEN   64
 
 struct App
 {
-    struct Library *WindowBase;
-    struct Library *LayoutBase;
-    struct Library *StringBase;
+    struct Library *IntuitionLib;
+    struct Library *WindowLib;
+    struct Library *LayoutLib;
+    struct Library *StringLib;
 
+    Object *string_obj;
+    Object *root_layout;
     Object *win_obj;
-    Object *gad_name;
 
     struct Window *win;
 
@@ -42,11 +60,9 @@ static void App_Clear(struct App *app)
 
 static void UI_UpdateTitle(struct App *app)
 {
-    char title[96];
+    char title[128];
 
-    strcpy(title, "ReXamples - 06_String [");
-    strncat(title, app->name_buffer, NAME_LEN - 1);
-    strncat(title, "]", 1);
+    sprintf(title, "ReXamples - 06_String [%s]", app->name_buffer);
 
     if (app->win != NULL)
         SetWindowTitles(app->win, (UBYTE *)title, (UBYTE *)~0);
@@ -56,71 +72,94 @@ static int UI_Create(struct App *app)
 {
     int ok;
 
+    struct TagItem string_tags[] =
+    {
+        { GA_ID,             GID_NAME },
+        { GA_RelVerify,      TRUE },
+        { GA_TabCycle,       TRUE },
+        { STRINGA_TextVal,   (ULONG)app->name_buffer },
+        { STRINGA_MaxChars,  NAME_LEN - 1 },
+        { TAG_DONE,          0 }
+    };
+
+    struct TagItem root_layout_tags[] =
+    {
+        { LAYOUT_Orientation, LAYOUT_ORIENT_VERT },
+        { LAYOUT_SpaceOuter,  TRUE },
+        { LAYOUT_AddChild,    0 },   /* string gadget */
+        { TAG_DONE,           0 }
+    };
+
+    struct TagItem window_tags[] =
+    {
+        { WA_Title,        (ULONG)"ReXamples - 06_String [Amiga]" },
+        { WA_Activate,     TRUE },
+        { WA_DepthGadget,  TRUE },
+        { WA_DragBar,      TRUE },
+        { WA_CloseGadget,  TRUE },
+        { WA_SizeGadget,   TRUE },
+        { WA_IDCMP,        IDCMP_CLOSEWINDOW },
+        { WINDOW_Position, WPOS_CENTERSCREEN },
+        { WINDOW_Layout,   0 },   /* filled after root layout exists */
+        { TAG_DONE,        0 }
+    };
+
     ok = 0;
 
-    app->WindowBase = OpenLibrary("window.class", 47);
-    if (app->WindowBase == NULL)
+    app->IntuitionLib = OpenLibrary("intuition.library", 39);
+    if (app->IntuitionLib == NULL)
+        goto out;
+    IntuitionBase = (struct IntuitionBase *)app->IntuitionLib;
+
+    app->WindowLib = OpenLibrary("window.class", 47);
+    if (app->WindowLib == NULL)
+        goto out;
+    WindowBase = app->WindowLib;
+
+    app->LayoutLib = OpenLibrary("layout.gadget", 47);
+    if (app->LayoutLib == NULL)
+        goto out;
+    LayoutBase = app->LayoutLib;
+
+    app->StringLib = OpenLibrary("string.gadget", 47);
+    if (app->StringLib == NULL)
+        goto out;
+    StringBase = app->StringLib;
+
+    app->string_obj = NewObjectA(STRING_GetClass(), NULL, string_tags);
+    if (app->string_obj == NULL)
         goto out;
 
-    app->LayoutBase = OpenLibrary("layout.gadget", 47);
-    if (app->LayoutBase == NULL)
+    root_layout_tags[2].ti_Data = (ULONG)app->string_obj;
+
+    app->root_layout = NewObjectA(LAYOUT_GetClass(), NULL, root_layout_tags);
+    if (app->root_layout == NULL)
         goto out;
 
-    app->StringBase = OpenLibrary("string.gadget", 47);
-    if (app->StringBase == NULL)
-        goto out;
+    window_tags[8].ti_Data = (ULONG)app->root_layout;
 
-    app->gad_name =
-        StringObject,
-            GA_ID, GID_NAME,
-            GA_RelVerify, TRUE,
-            GA_TabCycle, TRUE,
-            STRINGA_TextVal, (ULONG)app->name_buffer,
-            STRINGA_MaxChars, NAME_LEN - 1,
-        End;
-
-    if (app->gad_name == NULL)
-        goto out;
-
-    app->win_obj =
-        WindowObject,
-            WA_Title,       (ULONG)"ReXamples - 06_String [Amiga]",
-            WA_Activate,    TRUE,
-            WA_DepthGadget, TRUE,
-            WA_DragBar,     TRUE,
-            WA_CloseGadget, TRUE,
-            WA_SizeGadget,  TRUE,
-            WA_IDCMP,       IDCMP_CLOSEWINDOW,
-            WINDOW_Position, WPOS_CENTERSCREEN,
-            WINDOW_Layout,
-                VLayoutObject,
-                    LAYOUT_SpaceOuter, TRUE,
-                    StartMember, app->gad_name, EndMember,
-                End,
-        End;
-
+    app->win_obj = NewObjectA(WINDOW_GetClass(), NULL, window_tags);
     if (app->win_obj == NULL)
         goto out;
 
     ok = 1;
 
 out:
-    if (!ok && app->gad_name != NULL)
-    {
-        DisposeObject(app->gad_name);
-        app->gad_name = NULL;
-    }
-
     return ok;
 }
 
 static int UI_Open(struct App *app)
 {
-    app->win = (struct Window *)RA_OpenWindow(app->win_obj);
+    ULONG open_msg[2];
+
+    open_msg[0] = WM_OPEN;
+    open_msg[1] = 0;
+
+    app->win = (struct Window *)DoMethodA(app->win_obj, (Msg)open_msg);
     if (app->win == NULL)
         return 0;
 
-    app->win_sigmask = RA_HandleInput(app->win_obj, NULL);
+    app->win_sigmask = 1UL << app->win->UserPort->mp_SigBit;
     app->running = 1;
 
     UI_UpdateTitle(app);
@@ -130,9 +169,14 @@ static int UI_Open(struct App *app)
 
 static void UI_Close(struct App *app)
 {
+    ULONG close_msg[2];
+
     if (app->win != NULL)
     {
-        RA_CloseWindow(app->win_obj);
+        close_msg[0] = WM_CLOSE;
+        close_msg[1] = 0;
+
+        DoMethodA(app->win_obj, (Msg)close_msg);
         app->win = NULL;
     }
 
@@ -145,75 +189,74 @@ static void UI_Destroy(struct App *app)
     {
         DisposeObject(app->win_obj);
         app->win_obj = NULL;
-        app->gad_name = NULL;
+
+        app->root_layout = NULL;
+        app->string_obj = NULL;
     }
-    else if (app->gad_name != NULL)
+    else
     {
-        DisposeObject(app->gad_name);
-        app->gad_name = NULL;
+        if (app->root_layout != NULL)
+        {
+            DisposeObject(app->root_layout);
+            app->root_layout = NULL;
+            app->string_obj = NULL;
+        }
+        else if (app->string_obj != NULL)
+        {
+            DisposeObject(app->string_obj);
+            app->string_obj = NULL;
+        }
     }
 
-    if (app->StringBase != NULL)
+    if (app->StringLib != NULL)
     {
-        CloseLibrary(app->StringBase);
-        app->StringBase = NULL;
+        CloseLibrary(app->StringLib);
+        app->StringLib = NULL;
+        StringBase = NULL;
     }
 
-    if (app->LayoutBase != NULL)
+    if (app->LayoutLib != NULL)
     {
-        CloseLibrary(app->LayoutBase);
-        app->LayoutBase = NULL;
+        CloseLibrary(app->LayoutLib);
+        app->LayoutLib = NULL;
+        LayoutBase = NULL;
     }
 
-    if (app->WindowBase != NULL)
+    if (app->WindowLib != NULL)
     {
-        CloseLibrary(app->WindowBase);
-        app->WindowBase = NULL;
+        CloseLibrary(app->WindowLib);
+        app->WindowLib = NULL;
+        WindowBase = NULL;
+    }
+
+    if (app->IntuitionLib != NULL)
+    {
+        CloseLibrary(app->IntuitionLib);
+        app->IntuitionLib = NULL;
+        IntuitionBase = NULL;
     }
 }
 
-static void App_HandleInput(struct App *app)
+static void App_DispatchString(struct App *app)
 {
-    ULONG result;
-    UWORD code;
     ULONG text_ptr;
 
-    while ((result = RA_HandleInput(app->win_obj, &code)) != WMHI_LASTMSG)
+    GetAttr(STRINGA_TextVal, app->string_obj, &text_ptr);
+    if (text_ptr != 0)
     {
-        switch (result & WMHI_CLASSMASK)
-        {
-            case WMHI_CLOSEWINDOW:
-                app->running = 0;
-                break;
-
-            case WMHI_GADGETUP:
-                switch (result & WMHI_GADGETMASK)
-                {
-                    case GID_NAME:
-                        GetAttr(STRINGA_TextVal, app->gad_name, &text_ptr);
-                        if (text_ptr != 0)
-                        {
-                            strncpy(app->name_buffer, (char *)text_ptr, NAME_LEN - 1);
-                            app->name_buffer[NAME_LEN - 1] = '\0';
-                            UI_UpdateTitle(app);
-                        }
-                        break;
-
-                    default:
-                        break;
-                }
-                break;
-
-            default:
-                break;
-        }
+        strncpy(app->name_buffer, (char *)text_ptr, NAME_LEN - 1);
+        app->name_buffer[NAME_LEN - 1] = '\0';
+        UI_UpdateTitle(app);
     }
 }
 
 static void App_Run(struct App *app)
 {
     ULONG signals;
+    ULONG result;
+    WORD code;
     ULONG waitmask;
+    struct wmHandle handle_msg;
 
     waitmask = app->win_sigmask | SIGBREAKF_CTRL_C;
 
@@ -225,7 +268,35 @@ static void App_Run(struct App *app)
             app->running = 0;
 
         if (signals & app->win_sigmask)
-            App_HandleInput(app);
+        {
+            handle_msg.MethodID = WM_HANDLEINPUT;
+            handle_msg.wmh_Code = &code;
+
+            while ((result = DoMethodA(app->win_obj, (Msg)&handle_msg)) != WMHI_LASTMSG)
+            {
+                switch (result & WMHI_CLASSMASK)
+                {
+                    case WMHI_CLOSEWINDOW:
+                        app->running = 0;
+                        break;
+
+                    case WMHI_GADGETUP:
+                        switch (result & WMHI_GADGETMASK)
+                        {
+                            case GID_NAME:
+                                App_DispatchString(app);
+                                break;
+
+                            default:
+                                break;
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
     }
 }
 
@@ -252,4 +323,3 @@ out:
 
     return rc;
 }
-

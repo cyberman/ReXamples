@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 
 #include <exec/types.h>
 #include <exec/libraries.h>
@@ -12,35 +13,39 @@
 
 #include <classes/window.h>
 #include <gadgets/layout.h>
-#include <gadgets/space.h>
+#include <gadgets/button.h>
+#include <gadgets/checkbox.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/window.h>
 #include <proto/layout.h>
-#include <proto/space.h>
+#include <proto/button.h>
+#include <proto/checkbox.h>
 
 /* vbcc proto headers used here expect global library bases. */
 struct IntuitionBase *IntuitionBase = NULL;
 struct Library *WindowBase = NULL;
 struct Library *LayoutBase = NULL;
-struct Library *SpaceBase = NULL;
+struct Library *ButtonBase = NULL;
+struct Library *CheckBoxBase = NULL;
 
 /* Local prototype needed by this build setup. */
 ULONG DoMethodA(Object *obj, Msg msg);
+
+#define GID_ENABLE  1
+#define GID_ACTION  2
 
 struct App
 {
     struct Library *IntuitionLib;
     struct Library *WindowLib;
     struct Library *LayoutLib;
-    struct Library *SpaceLib;
+    struct Library *ButtonLib;
+    struct Library *CheckBoxLib;
 
-    Object *space_top;
-    Object *space_left;
-    Object *space_right;
-    Object *space_bottom;
-    Object *row_layout;
+    Object *enable_obj;
+    Object *action_obj;
     Object *root_layout;
     Object *win_obj;
 
@@ -48,68 +53,68 @@ struct App
 
     ULONG win_sigmask;
     int running;
+    int enabled_state;
+    int action_count;
 };
 
 static void App_Clear(struct App *app)
 {
     memset(app, 0, sizeof(*app));
+    app->enabled_state = 0;
+    app->action_count = 0;
 }
 
-/*****************************************************************************
- *
- *  UI_Create
- *
- *  Purpose:
- *      Create a simple layout lesson with visible vertical and horizontal
- *      grouping, without introducing interaction yet.
- *
- *****************************************************************************/
+static void UI_UpdateState(struct App *app)
+{
+    char title[128];
+
+    SetAttrs(app->action_obj,
+        GA_Disabled, app->enabled_state ? FALSE : TRUE,
+        TAG_DONE);
+
+    sprintf(title,
+        "ReXamples - 20_EventDispatch [enabled=%d count=%d]",
+        app->enabled_state,
+        app->action_count);
+
+    if (app->win != NULL)
+        SetWindowTitles(app->win, (UBYTE *)title, (UBYTE *)~0);
+}
 
 static int UI_Create(struct App *app)
 {
     int ok;
 
-    struct TagItem top_space_tags[] =
+    struct TagItem enable_tags[] =
     {
-        { SPACE_MinHeight, 8 },
-        { TAG_DONE, 0 }
+        { GA_ID,        GID_ENABLE },
+        { GA_RelVerify, TRUE },
+        { GA_Text,      (ULONG)"_Enable action" },
+        { GA_Selected,  FALSE },
+        { TAG_DONE,     0 }
     };
 
-    struct TagItem side_space_tags[] =
+    struct TagItem action_tags[] =
     {
-        { SPACE_MinWidth,  40 },
-        { SPACE_MinHeight, 16 },
-        { TAG_DONE, 0 }
-    };
-
-    struct TagItem bottom_space_tags[] =
-    {
-        { SPACE_MinHeight, 8 },
-        { TAG_DONE, 0 }
-    };
-
-    struct TagItem row_layout_tags[] =
-    {
-        { LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ },
-        { LAYOUT_SpaceOuter,  TRUE },
-        { LAYOUT_AddChild,    0 },   /* left */
-        { LAYOUT_AddChild,    0 },   /* right */
-        { TAG_DONE,           0 }
+        { GA_ID,        GID_ACTION },
+        { GA_RelVerify, TRUE },
+        { GA_Text,      (ULONG)"_Action" },
+        { GA_Disabled,  TRUE },
+        { TAG_DONE,     0 }
     };
 
     struct TagItem root_layout_tags[] =
     {
         { LAYOUT_Orientation, LAYOUT_ORIENT_VERT },
         { LAYOUT_SpaceOuter,  TRUE },
-        { LAYOUT_AddChild,    0 },   /* top */
-        { LAYOUT_AddChild,    0 },   /* row */
-        { LAYOUT_AddChild,    0 },   /* bottom */
+        { LAYOUT_AddChild,    0 },   /* checkbox */
+        { LAYOUT_AddChild,    0 },   /* button */
         { TAG_DONE,           0 }
     };
 
     struct TagItem window_tags[] =
     {
-        { WA_Title,        (ULONG)"ReXamples - 02_Layout" },
+        { WA_Title,        (ULONG)"ReXamples - 20_EventDispatch [enabled=0 count=0]" },
         { WA_Activate,     TRUE },
         { WA_DepthGadget,  TRUE },
         { WA_DragBar,      TRUE },
@@ -117,7 +122,7 @@ static int UI_Create(struct App *app)
         { WA_SizeGadget,   TRUE },
         { WA_IDCMP,        IDCMP_CLOSEWINDOW },
         { WINDOW_Position, WPOS_CENTERSCREEN },
-        { WINDOW_Layout,   0 },   /* filled after root layout exists */
+        { WINDOW_Layout,   0 },
         { TAG_DONE,        0 }
     };
 
@@ -138,37 +143,26 @@ static int UI_Create(struct App *app)
         goto out;
     LayoutBase = app->LayoutLib;
 
-    app->SpaceLib = OpenLibrary("space.gadget", 47);
-    if (app->SpaceLib == NULL)
+    app->ButtonLib = OpenLibrary("button.gadget", 47);
+    if (app->ButtonLib == NULL)
         goto out;
-    SpaceBase = app->SpaceLib;
+    ButtonBase = app->ButtonLib;
 
-    app->space_top = NewObjectA(SPACE_GetClass(), NULL, top_space_tags);
-    if (app->space_top == NULL)
+    app->CheckBoxLib = OpenLibrary("checkbox.gadget", 47);
+    if (app->CheckBoxLib == NULL)
         goto out;
+    CheckBoxBase = app->CheckBoxLib;
 
-    app->space_left = NewObjectA(SPACE_GetClass(), NULL, side_space_tags);
-    if (app->space_left == NULL)
-        goto out;
-
-    app->space_right = NewObjectA(SPACE_GetClass(), NULL, side_space_tags);
-    if (app->space_right == NULL)
+    app->enable_obj = NewObjectA(CHECKBOX_GetClass(), NULL, enable_tags);
+    if (app->enable_obj == NULL)
         goto out;
 
-    app->space_bottom = NewObjectA(SPACE_GetClass(), NULL, bottom_space_tags);
-    if (app->space_bottom == NULL)
+    app->action_obj = NewObjectA(BUTTON_GetClass(), NULL, action_tags);
+    if (app->action_obj == NULL)
         goto out;
 
-    row_layout_tags[2].ti_Data = (ULONG)app->space_left;
-    row_layout_tags[3].ti_Data = (ULONG)app->space_right;
-
-    app->row_layout = NewObjectA(LAYOUT_GetClass(), NULL, row_layout_tags);
-    if (app->row_layout == NULL)
-        goto out;
-
-    root_layout_tags[2].ti_Data = (ULONG)app->space_top;
-    root_layout_tags[3].ti_Data = (ULONG)app->row_layout;
-    root_layout_tags[4].ti_Data = (ULONG)app->space_bottom;
+    root_layout_tags[2].ti_Data = (ULONG)app->enable_obj;
+    root_layout_tags[3].ti_Data = (ULONG)app->action_obj;
 
     app->root_layout = NewObjectA(LAYOUT_GetClass(), NULL, root_layout_tags);
     if (app->root_layout == NULL)
@@ -186,15 +180,6 @@ out:
     return ok;
 }
 
-/*****************************************************************************
- *
- *  UI_Open
- *
- *  Purpose:
- *      Open the lesson window and derive the signal mask for Wait().
- *
- *****************************************************************************/
-
 static int UI_Open(struct App *app)
 {
     ULONG open_msg[2];
@@ -208,6 +193,8 @@ static int UI_Open(struct App *app)
 
     app->win_sigmask = 1UL << app->win->UserPort->mp_SigBit;
     app->running = 1;
+
+    UI_UpdateState(app);
 
     return 1;
 }
@@ -228,15 +215,6 @@ static void UI_Close(struct App *app)
     app->win_sigmask = 0;
 }
 
-/*****************************************************************************
- *
- *  UI_Destroy
- *
- *  Purpose:
- *      Dispose all created objects and close all class libraries.
- *
- *****************************************************************************/
-
 static void UI_Destroy(struct App *app)
 {
     if (app->win_obj != NULL)
@@ -245,11 +223,8 @@ static void UI_Destroy(struct App *app)
         app->win_obj = NULL;
 
         app->root_layout = NULL;
-        app->row_layout = NULL;
-        app->space_top = NULL;
-        app->space_left = NULL;
-        app->space_right = NULL;
-        app->space_bottom = NULL;
+        app->enable_obj = NULL;
+        app->action_obj = NULL;
     }
     else
     {
@@ -257,53 +232,37 @@ static void UI_Destroy(struct App *app)
         {
             DisposeObject(app->root_layout);
             app->root_layout = NULL;
-            app->row_layout = NULL;
-            app->space_top = NULL;
-            app->space_left = NULL;
-            app->space_right = NULL;
-            app->space_bottom = NULL;
+            app->enable_obj = NULL;
+            app->action_obj = NULL;
         }
         else
         {
-            if (app->row_layout != NULL)
+            if (app->action_obj != NULL)
             {
-                DisposeObject(app->row_layout);
-                app->row_layout = NULL;
-                app->space_left = NULL;
-                app->space_right = NULL;
+                DisposeObject(app->action_obj);
+                app->action_obj = NULL;
             }
 
-            if (app->space_bottom != NULL)
+            if (app->enable_obj != NULL)
             {
-                DisposeObject(app->space_bottom);
-                app->space_bottom = NULL;
-            }
-
-            if (app->space_top != NULL)
-            {
-                DisposeObject(app->space_top);
-                app->space_top = NULL;
-            }
-
-            if (app->space_right != NULL)
-            {
-                DisposeObject(app->space_right);
-                app->space_right = NULL;
-            }
-
-            if (app->space_left != NULL)
-            {
-                DisposeObject(app->space_left);
-                app->space_left = NULL;
+                DisposeObject(app->enable_obj);
+                app->enable_obj = NULL;
             }
         }
     }
 
-    if (app->SpaceLib != NULL)
+    if (app->CheckBoxLib != NULL)
     {
-        CloseLibrary(app->SpaceLib);
-        app->SpaceLib = NULL;
-        SpaceBase = NULL;
+        CloseLibrary(app->CheckBoxLib);
+        app->CheckBoxLib = NULL;
+        CheckBoxBase = NULL;
+    }
+
+    if (app->ButtonLib != NULL)
+    {
+        CloseLibrary(app->ButtonLib);
+        app->ButtonLib = NULL;
+        ButtonBase = NULL;
     }
 
     if (app->LayoutLib != NULL)
@@ -326,6 +285,25 @@ static void UI_Destroy(struct App *app)
         app->IntuitionLib = NULL;
         IntuitionBase = NULL;
     }
+}
+
+static void App_DispatchEnable(struct App *app)
+{
+    ULONG selected;
+
+    GetAttr(GA_Selected, app->enable_obj, &selected);
+    app->enabled_state = (selected != 0);
+
+    UI_UpdateState(app);
+}
+
+static void App_DispatchAction(struct App *app)
+{
+    if (!app->enabled_state)
+        return;
+
+    app->action_count++;
+    UI_UpdateState(app);
 }
 
 static void App_Run(struct App *app)
@@ -356,6 +334,22 @@ static void App_Run(struct App *app)
                 {
                     case WMHI_CLOSEWINDOW:
                         app->running = 0;
+                        break;
+
+                    case WMHI_GADGETUP:
+                        switch (result & WMHI_GADGETMASK)
+                        {
+                            case GID_ENABLE:
+                                App_DispatchEnable(app);
+                                break;
+
+                            case GID_ACTION:
+                                App_DispatchAction(app);
+                                break;
+
+                            default:
+                                break;
+                        }
                         break;
 
                     default:

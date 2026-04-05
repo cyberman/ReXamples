@@ -2,40 +2,58 @@
 
 #include <exec/types.h>
 #include <exec/libraries.h>
-#include <intuition/intuition.h>
-#include <intuition/icclass.h>
+#include <utility/tagitem.h>
+#include <dos/dosextens.h>
+#include <libraries/gadtools.h>
+#include <proto/gadtools.h>
 
-#include <reaction/reaction.h>
-#include <reaction/reaction_macros.h>
+#include <intuition/intuition.h>
+#include <intuition/classusr.h>
+#include <intuition/intuitionbase.h>
+
+#include <classes/window.h>
+#include <gadgets/layout.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/window.h>
 #include <proto/layout.h>
 
-#define MID_ABOUT   1
-#define MID_QUIT    2
+/* vbcc proto headers used here expect global library bases. */
+struct IntuitionBase *IntuitionBase = NULL;
+struct Library *WindowBase = NULL;
+struct Library *LayoutBase = NULL;
+struct Library *GadToolsBase = NULL;
+
+/* Local prototype needed by this build setup. */
+ULONG DoMethodA(Object *obj, Msg msg);
+
+#define MID_ABOUT  1
+#define MID_QUIT   2
+
+static struct NewMenu nm_basic[] =
+{
+    { NM_TITLE, (STRPTR)"Project",  NULL,         0, 0, NULL },
+    { NM_ITEM,  (STRPTR)"About...", (STRPTR)"A",  0, 0, (APTR)MID_ABOUT },
+    { NM_ITEM,  (STRPTR)"Quit",     (STRPTR)"Q",  0, 0, (APTR)MID_QUIT  },
+    { NM_END,   NULL,               NULL,         0, 0, NULL }
+};
 
 struct App
 {
-    struct Library *WindowBase;
-    struct Library *LayoutBase;
+    struct Library *IntuitionLib;
+    struct Library *WindowLib;
+    struct Library *LayoutLib;
+    struct Library *GadToolsLib;
 
+    Object *root_layout;
     Object *win_obj;
-    struct Window *win;
 
+    struct Window *win;
     struct Menu *menu;
 
     ULONG win_sigmask;
     int running;
-};
-
-static struct NewMenu nm_basic[] =
-{
-    { NM_TITLE, (STRPTR)"Project",  NULL, 0, 0, NULL },
-    { NM_ITEM,  (STRPTR)"About...", (STRPTR)"A", 0, 0, (APTR)MID_ABOUT },
-    { NM_ITEM,  (STRPTR)"Quit",     (STRPTR)"Q", 0, 0, (APTR)MID_QUIT  },
-    { NM_END,   NULL, NULL, 0, 0, NULL }
 };
 
 static void App_Clear(struct App *app)
@@ -51,12 +69,26 @@ static void UI_UpdateTitle(struct App *app, STRPTR title)
 
 static int Menu_Create(struct App *app)
 {
-    app->menu = CreateMenus(nm_basic, TAG_DONE);
+    struct TagItem create_tags[] =
+    {
+        { TAG_DONE, 0 }
+    };
+
+    struct TagItem layout_tags[] =
+    {
+        { TAG_DONE, 0 }
+    };
+
+    app->menu = CreateMenusA(nm_basic, create_tags);
     if (app->menu == NULL)
         return 0;
 
-    if (!LayoutMenus(app->menu, NULL, TAG_DONE))
+    if (!LayoutMenusA(app->menu, NULL, layout_tags))
+    {
+        FreeMenus(app->menu);
+        app->menu = NULL;
         return 0;
+    }
 
     return 1;
 }
@@ -74,35 +106,59 @@ static int UI_Create(struct App *app)
 {
     int ok;
 
+    struct TagItem root_layout_tags[] =
+    {
+        { LAYOUT_Orientation, LAYOUT_ORIENT_VERT },
+        { LAYOUT_SpaceOuter,  TRUE },
+        { TAG_DONE,           0 }
+    };
+
+    struct TagItem window_tags[] =
+    {
+        { WA_Title,        (ULONG)"ReXamples - 14_Menu_Basic" },
+        { WA_Activate,     TRUE },
+        { WA_DepthGadget,  TRUE },
+        { WA_DragBar,      TRUE },
+        { WA_CloseGadget,  TRUE },
+        { WA_SizeGadget,   TRUE },
+        { WA_IDCMP,        IDCMP_CLOSEWINDOW | IDCMP_MENUPICK },
+        { WINDOW_Position, WPOS_CENTERSCREEN },
+        { WINDOW_Layout,   0 },   /* filled after root layout exists */
+        { TAG_DONE,        0 }
+    };
+
     ok = 0;
 
-    app->WindowBase = OpenLibrary("window.class", 47);
-    if (app->WindowBase == NULL)
+    app->IntuitionLib = OpenLibrary("intuition.library", 39);
+    if (app->IntuitionLib == NULL)
         goto out;
+    IntuitionBase = (struct IntuitionBase *)app->IntuitionLib;
 
-    app->LayoutBase = OpenLibrary("layout.gadget", 47);
-    if (app->LayoutBase == NULL)
+    app->WindowLib = OpenLibrary("window.class", 47);
+    if (app->WindowLib == NULL)
         goto out;
+    WindowBase = app->WindowLib;
+
+    app->LayoutLib = OpenLibrary("layout.gadget", 47);
+    if (app->LayoutLib == NULL)
+        goto out;
+    LayoutBase = app->LayoutLib;
+
+    app->GadToolsLib = OpenLibrary("gadtools.library", 39);
+    if (app->GadToolsLib == NULL)
+        goto out;
+    GadToolsBase = app->GadToolsLib;
 
     if (!Menu_Create(app))
         goto out;
 
-    app->win_obj =
-        WindowObject,
-            WA_Title,       (ULONG)"ReXamples - 14_Menu_Basic",
-            WA_Activate,    TRUE,
-            WA_DepthGadget, TRUE,
-            WA_DragBar,     TRUE,
-            WA_CloseGadget, TRUE,
-            WA_SizeGadget,  TRUE,
-            WA_IDCMP,       IDCMP_CLOSEWINDOW | IDCMP_MENUPICK,
-            WINDOW_Position, WPOS_CENTERSCREEN,
-            WINDOW_Layout,
-                VLayoutObject,
-                    LAYOUT_SpaceOuter, TRUE,
-                End,
-        End;
+    app->root_layout = NewObjectA(LAYOUT_GetClass(), NULL, root_layout_tags);
+    if (app->root_layout == NULL)
+        goto out;
 
+    window_tags[8].ti_Data = (ULONG)app->root_layout;
+
+    app->win_obj = NewObjectA(WINDOW_GetClass(), NULL, window_tags);
     if (app->win_obj == NULL)
         goto out;
 
@@ -114,14 +170,19 @@ out:
 
 static int UI_Open(struct App *app)
 {
-    app->win = (struct Window *)RA_OpenWindow(app->win_obj);
+    ULONG open_msg[2];
+
+    open_msg[0] = WM_OPEN;
+    open_msg[1] = 0;
+
+    app->win = (struct Window *)DoMethodA(app->win_obj, (Msg)open_msg);
     if (app->win == NULL)
         return 0;
 
     if (app->menu != NULL)
         SetMenuStrip(app->win, app->menu);
 
-    app->win_sigmask = RA_HandleInput(app->win_obj, NULL);
+    app->win_sigmask = 1UL << app->win->UserPort->mp_SigBit;
     app->running = 1;
 
     return 1;
@@ -129,10 +190,16 @@ static int UI_Open(struct App *app)
 
 static void UI_Close(struct App *app)
 {
+    ULONG close_msg[2];
+
     if (app->win != NULL)
     {
         ClearMenuStrip(app->win);
-        RA_CloseWindow(app->win_obj);
+
+        close_msg[0] = WM_CLOSE;
+        close_msg[1] = 0;
+
+        DoMethodA(app->win_obj, (Msg)close_msg);
         app->win = NULL;
     }
 
@@ -145,75 +212,82 @@ static void UI_Destroy(struct App *app)
     {
         DisposeObject(app->win_obj);
         app->win_obj = NULL;
+        app->root_layout = NULL;
+    }
+    else if (app->root_layout != NULL)
+    {
+        DisposeObject(app->root_layout);
+        app->root_layout = NULL;
     }
 
     Menu_Destroy(app);
 
-    if (app->LayoutBase != NULL)
+    if (app->LayoutLib != NULL)
     {
-        CloseLibrary(app->LayoutBase);
-        app->LayoutBase = NULL;
+        CloseLibrary(app->LayoutLib);
+        app->LayoutLib = NULL;
+        LayoutBase = NULL;
     }
 
-    if (app->WindowBase != NULL)
+    if (app->WindowLib != NULL)
     {
-        CloseLibrary(app->WindowBase);
-        app->WindowBase = NULL;
+        CloseLibrary(app->WindowLib);
+        app->WindowLib = NULL;
+        WindowBase = NULL;
     }
-}
 
-static void App_HandleMenuPick(struct App *app, ULONG menucode)
-{
-    UWORD item;
-
-    while (menucode != MENUNULL)
+    if (app->IntuitionLib != NULL)
     {
-        item = ITEMNUM(menucode);
+        CloseLibrary(app->IntuitionLib);
+        app->IntuitionLib = NULL;
+        IntuitionBase = NULL;
+    }
 
-        switch ((ULONG)GTMENUITEM_USERDATA(ItemAddress(app->menu, menucode)))
-        {
-            case MID_ABOUT:
-                UI_UpdateTitle(app, (STRPTR)"ReXamples - 14_Menu_Basic [About]");
-                break;
-
-            case MID_QUIT:
-                app->running = 0;
-                break;
-
-            default:
-                break;
-        }
-
-        menucode = MENUNEXT(menucode);
+    if (app->GadToolsLib != NULL)
+    {
+        CloseLibrary(app->GadToolsLib);
+        app->GadToolsLib = NULL;
+        GadToolsBase = NULL;
     }
 }
 
-static void App_HandleInput(struct App *app)
+static void App_HandleMenuPick(struct App *app, UWORD code)
 {
-    ULONG result;
-    UWORD code;
+    struct MenuItem *item;
+    ULONG userdata;
 
-    while ((result = RA_HandleInput(app->win_obj, &code)) != WMHI_LASTMSG)
+    while (code != MENUNULL)
     {
-        switch (result & WMHI_CLASSMASK)
+        item = ItemAddress(app->menu, code);
+        if (item != NULL)
         {
-            case WMHI_CLOSEWINDOW:
-                app->running = 0;
-                break;
+            userdata = (ULONG)GTMENUITEM_USERDATA(item);
 
-            case WMHI_MENUPICK:
-                App_HandleMenuPick(app, result & WMHI_MENUMASK);
-                break;
+            switch (userdata)
+            {
+                case MID_ABOUT:
+                    UI_UpdateTitle(app, (STRPTR)"ReXamples - 14_Menu_Basic [About]");
+                    break;
 
-            default:
-                break;
+                case MID_QUIT:
+                    app->running = 0;
+                    break;
+
+                default:
+                    break;
+            }
         }
+
+        code = item->NextSelect;
     }
 }
 
 static void App_Run(struct App *app)
 {
     ULONG signals;
+    struct IntuiMessage *msg;
+    ULONG class_id;
+    UWORD code;
     ULONG waitmask;
 
     waitmask = app->win_sigmask | SIGBREAKF_CTRL_C;
@@ -226,7 +300,29 @@ static void App_Run(struct App *app)
             app->running = 0;
 
         if (signals & app->win_sigmask)
-            App_HandleInput(app);
+        {
+            while ((msg = (struct IntuiMessage *)GetMsg(app->win->UserPort)) != NULL)
+            {
+                class_id = msg->Class;
+                code = msg->Code;
+
+                ReplyMsg((struct Message *)msg);
+
+                switch (class_id)
+                {
+                    case IDCMP_CLOSEWINDOW:
+                        app->running = 0;
+                        break;
+
+                    case IDCMP_MENUPICK:
+                        App_HandleMenuPick(app, code);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
     }
 }
 
@@ -253,4 +349,3 @@ out:
 
     return rc;
 }
-
